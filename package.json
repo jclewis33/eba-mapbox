@@ -14,6 +14,6 @@
   "author": "Casey",
   "license": "ISC",
   "devDependencies": {
-    "parcel": "^2.12.0"
+    "parcel": "^2.13.3"
   }
 }
