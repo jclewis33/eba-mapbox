@@ -75,6 +75,15 @@ window.Webflow.push(() => {
       let facebookText = "";
       let linkToUse = null;
 
+      // Get directions link if available
+      let directionsUrl = "";
+      const directionsElement = church.querySelector(
+        '[btn-selector="directions"] .g_clickable_link'
+      );
+      if (directionsElement) {
+        directionsUrl = directionsElement.getAttribute("href") || "";
+      }
+
       // Get website if available and not invisible
       const websiteElement = church.querySelector(".church-list_website");
       if (
@@ -144,6 +153,7 @@ window.Webflow.push(() => {
           address,
           linkToUse, // Store the single link to use
           coordinates: [lng, lat], // Mapbox uses [longitude, latitude] format
+          directionsUrl, // Store the directions URL
           element: church,
         });
         console.log(`Added church: ${name} at coordinates [${lng}, ${lat}]`);
@@ -177,18 +187,31 @@ window.Webflow.push(() => {
         <div class="church-popup">
           <p class="church-popup_name">${church.name}</p>
           <p class="church-popup_address">${church.address}</p>
+          <div class="church-popup_links">
       `;
 
       // Add the single link if available
       if (church.linkToUse && church.linkToUse.url) {
         popupContent += `
-          <div class="church-popup_links">
             <a href="${church.linkToUse.url}" target="_blank" class="church-popup_link ${church.linkToUse.type}">${church.linkToUse.text}</a>
-          </div>
         `;
       }
 
-      popupContent += `</div>`;
+      // Add directions link if available
+      if (church.directionsUrl) {
+        // Add a separator if we already have a previous link
+        if (church.linkToUse && church.linkToUse.url) {
+          popupContent += ` | `;
+        }
+        popupContent += `
+            <a href="${church.directionsUrl}" target="_blank" class="church-popup_link directions">Directions</a>
+        `;
+      }
+
+      popupContent += `
+          </div>
+        </div>
+      `;
 
       // Create popup with church information
       const popup = new mapboxgl.Popup({ offset: 25 }).setHTML(popupContent);
@@ -287,6 +310,29 @@ window.Webflow.push(() => {
       popup.remove();
     });
   }
+
+  //////////////////////////////////////////////////////////////
+  /////////////// MAP GEOCODER FUNCTIONALITY (SEARCH) //////////
+
+  // Initialize the Mapbox Geocoder for search functionality
+  const geocoder = new MapboxGeocoder({
+    accessToken: mapboxgl.accessToken, // Set the access token for Mapbox
+    mapboxgl: mapboxgl, // Reference to the Mapbox GL JS library
+    placeholder: "Type your address", // Set the placeholder text for the search box
+    zoom: 12, // Set a default zoom level for results
+  });
+
+  // Add the geocoder control to the map
+  map.addControl(geocoder);
+
+  // Add zoom and rotation controls to the map
+  map.addControl(new mapboxgl.NavigationControl());
+
+  // Event listener that fires when a search result occurs
+  geocoder.on("result", (event) => {
+    // Extract the geometry of the search result (coordinates)
+    const searchResult = event.result.geometry;
+  });
 
   //////////////////////////////////////////////////////////////
   /////////////////// INITIALIZE THE MAP ///////////////////////
